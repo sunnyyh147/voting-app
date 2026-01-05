@@ -1,4 +1,3 @@
-// voting-server/src/main/java/com/example/voting/server/dao/VoteDao.java
 package com.example.voting.server.dao;
 
 import com.zaxxer.hikari.HikariDataSource;
@@ -27,7 +26,6 @@ public class VoteDao {
         }
     }
 
-    /** 新增投票（C） */
     public boolean insertVote(int pollId, String username, int optionIndex) throws SQLException {
         String sql = "INSERT INTO votes(poll_id, username, option_index) VALUES(?,?,?)";
         try (Connection c = ds.getConnection();
@@ -39,7 +37,6 @@ public class VoteDao {
         }
     }
 
-    /** 改票（U） */
     public boolean updateVote(int pollId, String username, int optionIndex) throws SQLException {
         String sql = "UPDATE votes SET option_index=?, vote_time=CURRENT_TIMESTAMP WHERE poll_id=? AND username=?";
         try (Connection c = ds.getConnection();
@@ -51,7 +48,6 @@ public class VoteDao {
         }
     }
 
-    /** 撤销（D） */
     public boolean deleteVote(int pollId, String username) throws SQLException {
         String sql = "DELETE FROM votes WHERE poll_id=? AND username=?";
         try (Connection c = ds.getConnection();
@@ -62,7 +58,6 @@ public class VoteDao {
         }
     }
 
-    /** 统计（R） */
     public List<Long> countByOption(int pollId, int optionSize) throws SQLException {
         List<Long> counts = new ArrayList<>();
         for (int i = 0; i < optionSize; i++) counts.add(0L);
@@ -80,5 +75,31 @@ public class VoteDao {
             }
         }
         return counts;
+    }
+
+    /** 管理员查看：某投票下所有投票记录（是谁投的） */
+    public List<VoteRow> listVotesByPoll(int pollId) throws SQLException {
+        String sql = "SELECT username, option_index, vote_time FROM votes WHERE poll_id=? ORDER BY vote_time DESC";
+        List<VoteRow> list = new ArrayList<>();
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, pollId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    VoteRow r = new VoteRow();
+                    r.username = rs.getString("username");
+                    r.optionIndex = rs.getInt("option_index");
+                    r.voteTime = rs.getTimestamp("vote_time");
+                    list.add(r);
+                }
+            }
+        }
+        return list;
+    }
+
+    public static class VoteRow {
+        public String username;
+        public int optionIndex;
+        public Timestamp voteTime;
     }
 }

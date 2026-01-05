@@ -26,7 +26,7 @@ public class LoginFrame extends JFrame {
         this.api = new ApiClient(session);
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setSize(520, 340);
+        setSize(560, 340);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
@@ -38,7 +38,7 @@ public class LoginFrame extends JFrame {
         JPanel root = new JPanel(new GridLayout(1, 2, 10, 10));
         root.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        // ========== 左侧：登录 ==========
+        // 登录
         JPanel login = new JPanel(new GridBagLayout());
         login.setBorder(BorderFactory.createTitledBorder("登录"));
 
@@ -46,25 +46,21 @@ public class LoginFrame extends JFrame {
         c.insets = new Insets(6, 6, 6, 6);
         c.fill = GridBagConstraints.HORIZONTAL;
 
-        // 行0：服务器地址
         c.gridx = 0; c.gridy = 0; c.weightx = 0; c.gridwidth = 1;
         login.add(new JLabel("服务器地址"), c);
-        c.gridx = 1; c.gridy = 0; c.weightx = 1; c.gridwidth = 1;
+        c.gridx = 1; c.gridy = 0; c.weightx = 1;
         login.add(baseUrlField, c);
 
-        // 行1：用户名
         c.gridx = 0; c.gridy = 1; c.weightx = 0;
         login.add(new JLabel("用户名"), c);
         c.gridx = 1; c.gridy = 1; c.weightx = 1;
         login.add(userField, c);
 
-        // 行2：密码
         c.gridx = 0; c.gridy = 2; c.weightx = 0;
         login.add(new JLabel("密码"), c);
         c.gridx = 1; c.gridy = 2; c.weightx = 1;
         login.add(passField, c);
 
-        // 行3：登录按钮（占两列）
         JButton loginBtn = new JButton("登录");
         c.gridx = 0; c.gridy = 3; c.gridwidth = 2; c.weightx = 0;
         login.add(loginBtn, c);
@@ -72,7 +68,7 @@ public class LoginFrame extends JFrame {
         loginBtn.addActionListener(e -> doLogin());
         passField.addActionListener(e -> doLogin());
 
-        // ========== 右侧：注册 ==========
+        // 注册
         JPanel reg = new JPanel(new GridBagLayout());
         reg.setBorder(BorderFactory.createTitledBorder("注册（可选）"));
 
@@ -80,23 +76,19 @@ public class LoginFrame extends JFrame {
         r.insets = new Insets(6, 6, 6, 6);
         r.fill = GridBagConstraints.HORIZONTAL;
 
-        // 行0：用户名
         r.gridx = 0; r.gridy = 0; r.weightx = 0; r.gridwidth = 1;
         reg.add(new JLabel("用户名"), r);
-        r.gridx = 1; r.gridy = 0; r.weightx = 1; r.gridwidth = 1;
+        r.gridx = 1; r.gridy = 0; r.weightx = 1;
         reg.add(regUserField, r);
 
-        // 行1：密码
-        r.gridx = 0; r.gridy = 1; r.weightx = 0; r.gridwidth = 1;
+        r.gridx = 0; r.gridy = 1; r.weightx = 0;
         reg.add(new JLabel("密码"), r);
-        r.gridx = 1; r.gridy = 1; r.weightx = 1; r.gridwidth = 1;
+        r.gridx = 1; r.gridy = 1; r.weightx = 1;
         reg.add(regPassField, r);
 
-        // 行2：注册按钮（占两列）
         JButton regBtn = new JButton("注册");
         r.gridx = 0; r.gridy = 2; r.gridwidth = 2; r.weightx = 0;
         reg.add(regBtn, r);
-
         regBtn.addActionListener(e -> doRegister());
 
         root.add(login);
@@ -105,7 +97,7 @@ public class LoginFrame extends JFrame {
     }
 
     private JComponent buildTips() {
-        JLabel tips = new JLabel("提示：默认用户 test / 123456（服务端首次启动自动创建）");
+        JLabel tips = new JLabel("提示：普通用户 test / 123456；管理员 root / root123456（服务端首次启动自动创建）");
         tips.setBorder(BorderFactory.createEmptyBorder(0, 12, 10, 12));
         return tips;
     }
@@ -130,6 +122,7 @@ public class LoginFrame extends JFrame {
                     }
                     session.token = resp.data.token;
                     session.username = resp.data.username;
+                    session.admin = resp.data.admin;
 
                     PollListFrame f = new PollListFrame(session);
                     f.setVisible(true);
@@ -151,7 +144,7 @@ public class LoginFrame extends JFrame {
 
         SwingAsync.run(this,
                 () -> api.register(u, p),
-                (ApiResponse<Void> resp) -> {
+                resp -> {
                     if (!resp.success) {
                         JOptionPane.showMessageDialog(this, resp.message == null ? "注册失败" : resp.message);
                         return;

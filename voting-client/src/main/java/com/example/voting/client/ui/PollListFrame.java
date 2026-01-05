@@ -1,4 +1,3 @@
-// voting-client/src/main/java/com/example/voting/client/ui/PollListFrame.java
 package com.example.voting.client.ui;
 
 import com.example.voting.client.model.Session;
@@ -19,12 +18,12 @@ public class PollListFrame extends JFrame {
     private final JList<PollSummary> list = new JList<>(model);
 
     public PollListFrame(Session session) {
-        super("在线投票系统 - 投票列表（用户：" + session.username + "）");
+        super("在线投票系统 - 投票列表（用户：" + session.username + (session.admin ? " / 管理员" : "") + "）");
         this.session = session;
         this.api = new ApiClient(session);
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setSize(640, 420);
+        setSize(680, 440);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
@@ -44,6 +43,16 @@ public class PollListFrame extends JFrame {
 
         bar.add(refresh);
         bar.add(open);
+
+        if (session.admin) {
+            JButton adminBtn = new JButton("管理后台");
+            adminBtn.addActionListener(e -> {
+                AdminFrame af = new AdminFrame(session);
+                af.setVisible(true);
+            });
+            bar.add(adminBtn);
+        }
+
         bar.add(logout);
 
         refresh.addActionListener(e -> refreshPolls());
@@ -61,10 +70,6 @@ public class PollListFrame extends JFrame {
         JPanel p = new JPanel(new BorderLayout());
         p.setBorder(BorderFactory.createEmptyBorder(0, 8, 8, 8));
         p.add(sp, BorderLayout.CENTER);
-
-        list.addListSelectionListener(e -> {
-            // 可扩展：右侧预览
-        });
 
         list.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -102,6 +107,7 @@ public class PollListFrame extends JFrame {
     private void logout() {
         session.token = null;
         session.username = null;
+        session.admin = false;
         LoginFrame lf = new LoginFrame(session);
         lf.setVisible(true);
         dispose();

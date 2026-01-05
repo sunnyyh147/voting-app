@@ -1,4 +1,3 @@
-// voting-server/src/main/java/com/example/voting/server/http/BaseHandler.java
 package com.example.voting.server.http;
 
 import com.example.voting.server.auth.AuthManager;

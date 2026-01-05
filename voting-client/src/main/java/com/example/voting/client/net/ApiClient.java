@@ -1,4 +1,3 @@
-// voting-client/src/main/java/com/example/voting/client/net/ApiClient.java
 package com.example.voting.client.net;
 
 import com.example.voting.client.model.Session;
@@ -9,7 +8,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
@@ -64,6 +62,34 @@ public class ApiClient {
         return parse(resp, VoteResultData.class);
     }
 
+    // ====== 管理员 API ======
+    public ApiResponse<CreatePollResponseData> adminCreatePoll(String title, List<String> options) throws Exception {
+        CreatePollRequest req = new CreatePollRequest();
+        req.title = title;
+        req.options = options;
+        return post("/api/admin/polls", req, CreatePollResponseData.class, true);
+    }
+
+    public ApiResponse<Void> adminDeletePoll(int pollId) throws Exception {
+        HttpRequest.Builder b = HttpRequest.newBuilder()
+                .uri(URI.create(session.baseUrl + "/api/admin/polls/" + pollId))
+                .timeout(Duration.ofSeconds(8))
+                .DELETE();
+        if (session.isLoggedIn()) b.header("X-Auth-Token", session.token);
+
+        HttpResponse<byte[]> resp = http.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
+        return parse(resp, Void.class);
+    }
+
+    public ApiResponse<List<UserInfo>> adminListUsers() throws Exception {
+        return getList("/api/admin/users", UserInfo.class);
+    }
+
+    public ApiResponse<List<VoteRecord>> adminListVotes(int pollId) throws Exception {
+        return getList("/api/admin/polls/" + pollId + "/votes", VoteRecord.class);
+    }
+
+    // ====== 基础请求封装 ======
     private <T> ApiResponse<T> get(String path, Class<T> dataClass) throws Exception {
         HttpRequest.Builder b = HttpRequest.newBuilder()
                 .uri(URI.create(session.baseUrl + path))

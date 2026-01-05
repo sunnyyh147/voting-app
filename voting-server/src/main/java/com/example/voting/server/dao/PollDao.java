@@ -1,4 +1,3 @@
-// voting-server/src/main/java/com/example/voting/server/dao/PollDao.java
 package com.example.voting.server.dao;
 
 import com.example.voting.common.dto.PollSummary;
@@ -58,6 +57,52 @@ public class PollDao {
             );
         } catch (Exception e) {
             throw new RuntimeException("options_json parse failed", e);
+        }
+    }
+
+    public String toOptionsJson(List<String> options) {
+        try {
+            return JsonUtil.MAPPER.writeValueAsString(options);
+        } catch (Exception e) {
+            throw new RuntimeException("options_json write failed", e);
+        }
+    }
+
+    /** 发布投票（管理员） */
+    public int createPoll(String title, String optionsJson) throws SQLException {
+        String sql = "INSERT INTO polls(title, options_json, is_open) VALUES(?,?,1)";
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, title);
+            ps.setString(2, optionsJson);
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    /** 删除投票（管理员）：会同时删除 votes（不提供任何“改票数”的能力） */
+    public boolean deletePollWithVotes(int pollId) throws SQLException {
+        try (Connection c = ds.getConnection()) {
+            c.setAutoCommit(false);
+            try (PreparedStatement delVotes = c.prepareStatement("DELETE FROM votes WHERE poll_id=?");
+                 PreparedStatement delPoll = c.prepareStatement("DELETE FROM polls WHERE id=?")) {
+                delVotes.setInt(1, pollId);
+                delVotes.executeUpdate();
+
+                delPoll.setInt(1, pollId);
+                int n = delPoll.executeUpdate();
+
+                c.commit();
+                return n == 1;
+            } catch (SQLException e) {
+                c.rollback();
+                throw e;
+            } finally {
+                c.setAutoCommit(true);
+            }
         }
     }
 

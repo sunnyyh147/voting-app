@@ -1,4 +1,3 @@
-// voting-server/src/main/java/com/example/voting/server/ServerMain.java
 package com.example.voting.server;
 
 import com.example.voting.server.auth.AuthManager;
@@ -7,10 +6,7 @@ import com.example.voting.server.dao.UserDao;
 import com.example.voting.server.dao.VoteDao;
 import com.example.voting.server.db.DataSourceFactory;
 import com.example.voting.server.db.DbInit;
-import com.example.voting.server.http.LoginHandler;
-import com.example.voting.server.http.PollsHandler;
-import com.example.voting.server.http.RegisterHandler;
-import com.example.voting.server.http.VoteHandler;
+import com.example.voting.server.http.*;
 import com.sun.net.httpserver.HttpServer;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
@@ -40,14 +36,18 @@ public class ServerMain {
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        // 线程池：并发处理请求（多线程评分点）
         ExecutorService pool = Executors.newFixedThreadPool(16);
         server.setExecutor(pool);
 
+        // 普通接口
         server.createContext("/api/login", new LoginHandler(auth, userDao));
         server.createContext("/api/register", new RegisterHandler(auth, userDao));
-        server.createContext("/api/polls", new PollsHandler(auth, pollDao, voteDao)); // 同时处理 /api/polls/{id}
+        server.createContext("/api/polls", new PollsHandler(auth, pollDao, voteDao));
         server.createContext("/api/vote", new VoteHandler(auth, pollDao, voteDao));
+
+        // 管理员接口
+        server.createContext("/api/admin/users", new AdminUsersHandler(auth, userDao));
+        server.createContext("/api/admin/polls", new AdminPollsHandler(auth, userDao, pollDao, voteDao));
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutting down...");
@@ -58,7 +58,7 @@ public class ServerMain {
 
         server.start();
         log.info("Server started at http://127.0.0.1:{}/", port);
-        log.info("Default user: test / 123456");
+        log.info("Admin: root/root123456  User: test/123456");
     }
 
     private static Properties loadProps() throws Exception {

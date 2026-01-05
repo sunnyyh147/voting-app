@@ -1,4 +1,3 @@
-// voting-server/src/main/java/com/example/voting/server/http/LoginHandler.java
 package com.example.voting.server.http;
 
 import com.example.voting.common.dto.*;
@@ -28,13 +27,18 @@ public class LoginHandler extends BaseHandler {
                     HttpIO.fail(ex, 400, "username/password 不能为空");
                     return;
                 }
-                boolean ok = userDao.verifyLogin(req.username.trim(), req.password);
+
+                String u = req.username.trim();
+                boolean ok = userDao.verifyLogin(u, req.password);
                 if (!ok) {
                     HttpIO.fail(ex, 403, "用户名或密码错误");
                     return;
                 }
-                String token = auth.issueToken(req.username.trim());
-                HttpIO.writeJson(ex, 200, ApiResponse.ok(new LoginResponseData(token, req.username.trim())));
+
+                boolean admin = userDao.isAdmin(u);
+                String token = auth.issueToken(u);
+
+                HttpIO.writeJson(ex, 200, ApiResponse.ok(new LoginResponseData(token, u, admin)));
                 return;
             }
             HttpIO.fail(ex, 405, "Method Not Allowed");
